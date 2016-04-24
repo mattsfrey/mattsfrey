@@ -1,6 +1,7 @@
 (ns mattsfrey.views
-    (:require [re-frame.core :as re-frame]
-              [re-com.core :as re-com]))
+  (:require [re-frame.core :as re-frame]
+            [re-com.core :as re-com]
+            [reagent.core :as reagent]))
 
 
 ;; home
@@ -41,6 +42,19 @@
    :children [[about-title] [link-to-home-page]]])
 
 
+(def tabs-definition
+  [{:id ::home-panel  :label "Home"}
+   {:id ::about-panel  :label "About"}])
+
+
+(defn- inspect-1 [expr]
+  `(let [result# ~expr]
+     (js/console.info (str (pr-str '~expr) " => " (pr-str result#)))
+     result#))
+
+(defmacro inspect [& exprs]
+  `(do ~@(map inspect-1 exprs)))
+
 ;; main
 
 (defmulti panels identity)
@@ -48,9 +62,21 @@
 (defmethod panels :about-panel [] [about-panel])
 (defmethod panels :default [] [:div])
 
+
 (defn main-panel []
   (let [active-panel (re-frame/subscribe [:active-panel])]
     (fn []
+      (js/console.log "active-panel => " (pr-str @active-panel))
       [re-com/v-box
-       :height "100%"
-       :children [(panels @active-panel)]])))
+       :children [[re-com/h-box
+                   :align :center
+                   :children [
+                              [re-com/horizontal-pill-tabs
+                              :model @active-panel
+                              :tabs [{:id :home-panel  :label "Home"}
+                                     {:id :about-panel  :label "About"}]
+                              :on-change #(re-frame/dispatch [:set-active-panel %])]]]
+                  [re-com/h-box
+                   :height "100px"
+                   :children [[re-com/v-box :size "1" :class "Content"
+                               :children [(panels @active-panel)]]]]]])))
