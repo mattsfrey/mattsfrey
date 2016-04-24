@@ -1,7 +1,8 @@
 (ns mattsfrey.views
   (:require [re-frame.core :as re-frame]
             [re-com.core :as re-com]
-            [reagent.core :as reagent]))
+            [reagent.core :as reagent]
+            [secretary.core :as secretary]))
 
 
 ;; home
@@ -66,16 +67,18 @@
 (defn main-panel []
   (let [active-panel (re-frame/subscribe [:active-panel])]
     (fn []
-      (js/console.log "active-panel => " (pr-str @active-panel))
       [re-com/v-box
        :children [[re-com/h-box
                    :align :center
                    :children [
                               [re-com/horizontal-pill-tabs
-                              :model @active-panel
+                              :model (or @active-panel :home-panel)
                               :tabs [{:id :home-panel  :label "Home"}
                                      {:id :about-panel  :label "About"}]
-                              :on-change #(re-frame/dispatch [:set-active-panel %])]]]
+                              :on-change #(secretary/dispatch! (cond
+                                                                 (= % :home-panel) "/"
+                                                                 (= % :about-panel) "/about"
+                                                                 :else "/"))]]]
                   [re-com/h-box
                    :height "100px"
                    :children [[re-com/v-box :size "1" :class "Content"
